@@ -5,7 +5,7 @@ import pngToIco from 'png-to-ico';
 const root = process.cwd();
 const variantsDir = path.join(root, 'resources', 'icon-variants');
 const outputIco = path.join(root, 'resources', 'icon.ico');
-const expectedSizes = ['16', '24', '32', '48', '64', '128', '256', '512'];
+const expectedSizes = ['16', '32', '48', '256'];
 
 const missing = expectedSizes.filter(size => !fs.existsSync(path.join(variantsDir, `icon-${size}.png`)));
 if (missing.length) {
