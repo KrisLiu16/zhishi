@@ -2,7 +2,7 @@
 
 Clean, keyboard-friendly note app with AI assist (analyze/polish/chat), multiple Markdown themes, Mermaid & KaTeX, rich exports, and desktop packaging via Electron.
 
-[![CI](https://github.com/KrisLiu16/zhishi/actions/workflows/ci.yml/badge.svg)](https://github.com/KrisLiu16/zhishi/actions/workflows/ci.yml)
+[![CI](https://github.com/KrisLiu16/insight-notes/actions/workflows/ci.yml/badge.svg)](https://github.com/KrisLiu16/insight-notes/actions/workflows/ci.yml)
 
 ## Features
 - Notes: categories, tags, global search, sidebar/list collapse, undo/redo controls.
