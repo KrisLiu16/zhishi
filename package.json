@@ -49,8 +49,9 @@
   "build": {
     "appId": "com.zhishi.desktop",
     "productName": "Zhishi",
+    "icon": "resources/icon.png",
     "directories": {
-      "output": "release-build",
+      "output": "release",
       "buildResources": "resources"
     },
     "files": [
