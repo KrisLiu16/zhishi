@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ChevronRight, Columns, Copy, Download, Edit3, Eye, List, Loader2, MessageSquare, PenTool, Sidebar, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Columns, Copy, Download, Edit3, Eye, List, Loader2, Lock, MessageSquare, PenTool, Sidebar, Sparkles, Unlock } from 'lucide-react';
 import { Note, ViewMode } from '../types';
 
 interface EditorToolbarProps {
@@ -10,6 +10,7 @@ interface EditorToolbarProps {
   isAiAnalyzing: boolean;
   isAiPolishing: boolean;
   isCopied: boolean;
+  isReadOnly: boolean;
   onToggleSidebar: () => void;
   onToggleNoteList: () => void;
   onBack: () => void;
@@ -20,6 +21,7 @@ interface EditorToolbarProps {
   onCopy: () => void;
   onExport: () => void;
   onToggleChat: () => void;
+  onToggleReadOnly: () => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -30,6 +32,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   isAiAnalyzing,
   isAiPolishing,
   isCopied,
+  isReadOnly,
   onToggleSidebar,
   onToggleNoteList,
   onBack,
@@ -40,6 +43,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onCopy,
   onExport,
   onToggleChat,
+  onToggleReadOnly,
 }) => (
   <div className="h-16 px-4 md:px-6 border-b border-slate-100 flex items-center justify-between bg-white/90 backdrop-blur-md z-20 shrink-0">
     <div className="flex items-center gap-3 overflow-hidden flex-1 mr-4">
@@ -151,6 +155,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
       <button onClick={onExport} className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors" title="导出 Markdown">
         <Download size={18} />
+      </button>
+
+      <button
+        onClick={onToggleReadOnly}
+        className={`p-2 rounded-lg transition-colors ${isReadOnly ? 'text-amber-600 bg-amber-50' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+        title={isReadOnly ? '取消只读 (允许编辑)' : '切换只读模式'}
+      >
+        {isReadOnly ? <Lock size={18} /> : <Unlock size={18} />}
       </button>
     </div>
   </div>

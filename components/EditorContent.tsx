@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CheckSquare, Clipboard, Clock, FileText, Heading2, Image, ListTodo, Minus, Quote, Sigma, Table } from 'lucide-react';
 import { MarkdownTheme, Note, NoteStats, ViewMode } from '../types';
 import TagEditor from './TagEditor';
@@ -11,13 +11,21 @@ interface EditorContentProps {
   lastSaved: number;
   onUpdateNote: (id: string, updates: Partial<Note>) => void;
   markdownTheme?: MarkdownTheme;
+  isReadOnly?: boolean;
 }
 
-const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, stats, lastSaved, onUpdateNote, markdownTheme = 'classic' }) => {
+const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, stats, lastSaved, onUpdateNote, markdownTheme = 'classic', isReadOnly }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
+  const [insertHint, setInsertHint] = useState<string>('');
+
+  const attachmentsSize = useMemo(() => {
+    if (!activeNote.attachments) return 0;
+    return Object.values(activeNote.attachments).reduce((acc, dataUrl) => acc + Math.max(0, dataUrl.length * 0.75 - 22), 0);
+  }, [activeNote.attachments]);
 
   useEffect(() => {
     const hideMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
@@ -37,6 +45,35 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
       start: ta?.selectionStart ?? selection.start,
       end: ta?.selectionEnd ?? selection.end,
     };
+  };
+
+  const compressImage = async (file: File): Promise<Blob> => {
+    const maxDimension = 1600;
+    const targetSize = 700 * 1024;
+    const dataUrl = await readAsDataUrl(file);
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    await new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve;
+    });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !img.width || !img.height) {
+      return file;
+    }
+    const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const tryExport = (quality: number) => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject()), 'image/jpeg', quality));
+    let quality = 0.85;
+    let blob = await tryExport(quality);
+    if (blob.size > targetSize) {
+      quality = 0.7;
+      blob = await tryExport(quality);
+    }
+    return blob;
   };
 
   const insertTextAtSelection = (text: string, extraUpdates: Partial<Note> = {}) => {
@@ -75,7 +112,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
 
   const createAttachmentId = () => `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-  const readAsDataUrl = (file: File) =>
+  const readAsDataUrl = (file: Blob) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
@@ -84,7 +121,8 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
     });
 
   const insertImageFile = async (file: File) => {
-    const dataUrl = await readAsDataUrl(file);
+    const compressed = await compressImage(file);
+    const dataUrl = await readAsDataUrl(compressed);
     const { start, end } = getSelectionRange();
     const selectionText = activeNote.content.slice(start, end).trim();
     const alt = selectionText || file.name.replace(/\.[^/.]+$/, '') || 'image';
@@ -98,6 +136,8 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
     if (!file) return;
     try {
       await insertImageFile(file);
+      setInsertHint(`图片已插入并压缩 (${Math.round(attachmentsSize / 1024)} KB 总占用)`);
+      setTimeout(() => setInsertHint(''), 2500);
     } catch (err) {
       console.error('Failed to insert image', err);
     } finally {
@@ -215,9 +255,18 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
             ref={textareaRef}
             value={activeNote.content}
             onChange={e => onUpdateNote(activeNote.id, { content: e.target.value })}
+            readOnly={isReadOnly}
             onSelect={updateSelection}
             onClick={updateSelection}
             onKeyUp={updateSelection}
+            onScroll={() => {
+              const ta = textareaRef.current;
+              const pv = previewRef.current;
+              if (ta && pv && pv.scrollHeight > pv.clientHeight) {
+                const ratio = ta.scrollTop / Math.max(1, ta.scrollHeight - ta.clientHeight);
+                pv.scrollTop = ratio * (pv.scrollHeight - pv.clientHeight);
+              }
+            }}
             onPaste={handlePaste}
             onContextMenu={e => {
               e.preventDefault();
@@ -230,6 +279,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
         </div>
 
         <div
+          ref={previewRef}
           className={`
             h-full overflow-y-auto custom-scrollbar bg-white transition-all duration-300 ease-in-out
             ${viewMode === 'view' ? 'w-full' : ''}
@@ -294,8 +344,14 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
           <span className="flex items-center gap-1.5 hover:text-slate-600 transition-colors hidden sm:flex">
             <Clock size={12} />~{stats.readingTime} 分钟阅读
           </span>
+          {attachmentsSize > 0 && (
+            <span className="flex items-center gap-1.5 hover:text-slate-600 transition-colors hidden sm:flex">
+              <Image size={12} />附件 {Math.round(attachmentsSize / 1024)} KB
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4">
+          {insertHint && <span className="text-emerald-600">{insertHint}</span>}
           <span className="flex items-center gap-1.5">
             {lastSaved ? (
               <>

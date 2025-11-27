@@ -42,7 +42,27 @@ const CopyButton = ({ text }: { text: string }) => {
   );
 };
 
+const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments = {}, theme = 'feishu' }) => {
+  const headings = useMemo(() => {
+    const lines = content.split('\n');
+    return lines
+      .map(line => {
+        const match = /^(#{1,6})\s+(.+)$/.exec(line);
+        if (!match) return null;
+        const level = match[1].length;
+        const text = match[2].trim();
+        return { level, text, id: slugify(text) };
+      })
+      .filter(Boolean) as { level: number; text: string; id: string }[];
+  }, [content]);
+
   const themeStyles = useMemo(
     () => ({
       feishu: {
@@ -188,7 +208,29 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
   };
 
   return (
-    <div className={`prose max-w-none prose-headings:font-bold prose-img:rounded-lg markdown-body ${style.prose} ${style.link} ${style.container}`}>
+    <div className={`relative prose max-w-none prose-headings:font-bold prose-img:rounded-lg markdown-body ${style.prose} ${style.link} ${style.container}`}>
+      {headings.length > 0 && (
+        <div className="hidden lg:block absolute right-[-220px] top-0 w-48 text-xs text-slate-500">
+          <div className="sticky top-6 bg-white/80 backdrop-blur rounded-xl border border-slate-200 shadow-sm p-3 space-y-2">
+            <div className="text-[11px] uppercase tracking-[0.08em] font-semibold text-slate-400">目录</div>
+            <div className="space-y-1 max-h-[320px] overflow-auto">
+              {headings.map(h => (
+                <button
+                  key={h.id}
+                  onClick={() => {
+                    const el = document.getElementById(h.id);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="block w-full text-left hover:text-blue-600 transition-colors"
+                  style={{ paddingLeft: `${(h.level - 1) * 10}px` }}
+                >
+                  {h.text}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -199,6 +241,36 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
               return <input {...props} disabled className="mr-2 rounded accent-blue-600 h-4 w-4 align-middle" />;
             }
             return <input {...props} />;
+          },
+          h1({ children }) {
+            const text = String(children);
+            const id = slugify(text);
+            return <h1 id={id}>{children}</h1>;
+          },
+          h2({ children }) {
+            const text = String(children);
+            const id = slugify(text);
+            return <h2 id={id}>{children}</h2>;
+          },
+          h3({ children }) {
+            const text = String(children);
+            const id = slugify(text);
+            return <h3 id={id}>{children}</h3>;
+          },
+          h4({ children }) {
+            const text = String(children);
+            const id = slugify(text);
+            return <h4 id={id}>{children}</h4>;
+          },
+          h5({ children }) {
+            const text = String(children);
+            const id = slugify(text);
+            return <h5 id={id}>{children}</h5>;
+          },
+          h6({ children }) {
+            const text = String(children);
+            const id = slugify(text);
+            return <h6 id={id}>{children}</h6>;
           },
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
@@ -211,6 +283,9 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
 
             return !inline && match ? (
               <div className={`relative group my-4 rounded-lg overflow-hidden border shadow-sm ${style.codeBorder}`}>
+                <div className="absolute top-2 left-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-white/80 px-2 py-1 rounded-md border border-slate-200 shadow-sm">
+                  {language || 'code'}
+                </div>
                 <CopyButton text={codeString} />
                 <SyntaxHighlighter
                   style={style.codeStyle}
@@ -219,7 +294,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
                   showLineNumbers
                   wrapLongLines
                   lineNumberStyle={{ color: '#94a3b8', fontSize: '12px', paddingRight: '12px' }}
-                  customStyle={{ margin: 0, borderRadius: 0, backgroundColor: style.codeBg, fontSize: '13px', padding: '18px' }}
+                  customStyle={{ margin: 0, borderRadius: 0, backgroundColor: style.codeBg, fontSize: '13px', padding: '24px 18px 18px' }}
                   {...props}
                 >
                   {codeString}
@@ -259,8 +334,21 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
               e.preventDefault();
               window.open(href, '_blank', 'noopener,noreferrer');
             };
+            let domain = '';
+            try {
+              domain = new URL(href).host;
+            } catch (err) {
+              domain = href;
+            }
             return (
-              <a href={href} onClick={handleClick} target="_blank" rel="noreferrer" className="underline decoration-slate-300 hover:decoration-current">
+              <a
+                href={href}
+                onClick={handleClick}
+                target="_blank"
+                rel="noreferrer"
+                title={`外链: ${domain}`}
+                className="underline decoration-slate-300 hover:decoration-current"
+              >
                 {children}
               </a>
             );

@@ -54,6 +54,7 @@ const App = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [lastSaved, setLastSaved] = useState<number>(Date.now());
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingAnalyze, setPendingAnalyze] = useState<{ tags: string[]; summary?: string } | null>(null);
@@ -73,6 +74,14 @@ const App = () => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         setLastSaved(Date.now());
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        setIsExportOpen(true);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleAiPolish();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -475,6 +484,7 @@ const App = () => {
                 isAiAnalyzing={isAiAnalyzing}
                 isAiPolishing={isAiPolishing}
                 isCopied={isCopied}
+                isReadOnly={isReadOnly}
                 onToggleSidebar={() => setIsSidebarOpen(true)}
                 onToggleNoteList={() => setIsNoteListOpen(true)}
                 onBack={() => setSelectedNoteId(null)}
@@ -485,6 +495,7 @@ const App = () => {
         onCopy={handleCopyContent}
         onExport={() => setIsExportOpen(true)}
         onToggleChat={() => setIsChatOpen(v => !v)}
+        onToggleReadOnly={() => setIsReadOnly(v => !v)}
       />
               <EditorContent
                 activeNote={activeNote}
@@ -493,6 +504,7 @@ const App = () => {
                 lastSaved={lastSaved}
                 onUpdateNote={handleUpdateNote}
                 markdownTheme={settings.markdownTheme || 'classic'}
+                isReadOnly={isReadOnly}
               />
             </>
           ) : (
