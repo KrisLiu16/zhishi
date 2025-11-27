@@ -1,6 +1,6 @@
 # Zhishi — AI 笔记与桌面应用
 
-一个支持 AI 分析、润色、对话、Markdown 预览/多主题、Mermaid、KaTeX，以及多格式导出的现代笔记应用。已接入 Tauri 打包脚本，可一键生成 Win/macOS/Linux 桌面版本。
+一个支持 AI 分析、润色、对话、Markdown 预览/多主题、Mermaid、KaTeX，以及多格式导出的现代笔记应用。内置 Electron 打包流程，可一键生成 Win/macOS/Linux 桌面版本。
 
 ## 开发
 
@@ -17,13 +17,16 @@ npm run dev    # 开发服务：默认 3334
 - 导出：PDF/PNG/HTML/Markdown，尺寸/方向/缩放/边距可调，文件保存支持文件选择器
 - 备份：笔记+配置 JSON 导入/导出，支持文件保存器
 
-## 打包桌面应用（Tauri）
+## 打包桌面应用（Electron）
 
-1. 安装 Rust toolchain & Node 18+，并确保 `cargo` 可用。
-2. 一键打包：
+1. 安装 Node 18+。
+2. 构建并打包：
    ```bash
-   ./scripts/tauri-build.sh
+   npm run electron:build
    ```
-   产物位于 `src-tauri/target/release`（Windows: exe/msi，macOS: app/dmg）。
+   产物位于 `release/`（Windows: exe/zip，macOS: dmg/zip，Linux: AppImage/deb）。
 
-如需自定义窗口或图标，可修改 `src-tauri/tauri.conf.json`。+
+调试桌面版可先构建前端再运行 Electron：
+```bash
+npm run electron:dev
+```

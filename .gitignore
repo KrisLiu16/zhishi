@@ -19,9 +19,12 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 
-# Tauri
-src-tauri/target
-src-tauri/gen
+# Electron build artifacts
+release
+*.exe
+*.dmg
+*.AppImage
+*.deb
 
 # Others
 *.local
