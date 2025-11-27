@@ -208,16 +208,6 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
       icon: <Table size={14} />,
       onClick: () => insertSnippet('| 列1 | 列2 |\n| --- | --- |\n| 内容 | 内容 |\n'),
     },
-    {
-      label: '插入公式 (块)',
-      icon: <Sigma size={14} />,
-      onClick: () => insertSnippet('$$\n', '\n$$'),
-    },
-    {
-      label: '插入公式 (行内)',
-      icon: <Sigma size={14} />,
-      onClick: () => insertSnippet('$', '$'),
-    },
   ];
 
   return (

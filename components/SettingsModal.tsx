@@ -171,6 +171,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
                 </div>
                 <p className="text-xs text-slate-400">导入会覆盖当前笔记与设置，请先导出备份。</p>
               </div>
+
+              <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-slate-800">快捷键</label>
+                  <span className="text-[11px] text-slate-400">Keyboard Shortcuts</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                  {[
+                    { key: 'Cmd/Ctrl + K', desc: '全局搜索 / 命令面板' },
+                    { key: 'Cmd/Ctrl + S', desc: '保存' },
+                    { key: 'Cmd/Ctrl + Shift + P', desc: '打开导出' },
+                    { key: 'Cmd/Ctrl + Enter', desc: 'AI 润色' },
+                  ].map(item => (
+                    <div key={item.key} className="flex items-center justify-between px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/60">
+                      <span className="font-mono text-xs text-slate-700">{item.key}</span>
+                      <span className="text-[13px] text-slate-500">{item.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
