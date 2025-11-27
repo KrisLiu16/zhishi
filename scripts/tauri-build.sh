@@ -48,11 +48,17 @@ if ! command -v cc >/dev/null 2>&1; then
         apt-get install -y --allow-unauthenticated pkg-config libglib2.0-dev || true
       fi
     fi
-    echo "安装 GTK 相关开发包..."
+    echo "安装 GTK / WebKit / OpenSSL 开发包..."
     if command -v sudo >/dev/null 2>&1; then
-      sudo apt-get install -y --allow-unauthenticated libgtk-3-dev libcairo2-dev libgdk-pixbuf-2.0-dev libpango1.0-dev libatk1.0-dev || true
+      sudo apt-get install -y --allow-unauthenticated \
+        libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+        libcairo2-dev libgdk-pixbuf-2.0-dev libpango1.0-dev libatk1.0-dev \
+        libssl-dev || true
     else
-      apt-get install -y --allow-unauthenticated libgtk-3-dev libcairo2-dev libgdk-pixbuf-2.0-dev libpango1.0-dev libatk1.0-dev || true
+      apt-get install -y --allow-unauthenticated \
+        libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+        libcairo2-dev libgdk-pixbuf-2.0-dev libpango1.0-dev libatk1.0-dev \
+        libssl-dev || true
     fi
   elif command -v dnf >/dev/null 2>&1; then
     echo "未检测到 C 编译器，自动安装 Development Tools（需要 sudo）..."
@@ -60,30 +66,30 @@ if ! command -v cc >/dev/null 2>&1; then
     sudo dnf install -y gcc gcc-c++ clang make || true
     echo "安装 pkgconf 与 glib2-devel..."
     sudo dnf install -y pkgconf-pkg-config glib2-devel || true
-    echo "安装 GTK 开发包..."
-    sudo dnf install -y gtk3-devel cairo-devel gdk-pixbuf2-devel pango-devel atk-devel || true
+    echo "安装 GTK / WebKit / OpenSSL 开发包..."
+    sudo dnf install -y gtk3-devel webkit2gtk4.1-devel libappindicator-gtk3 librsvg2-devel cairo-devel gdk-pixbuf2-devel pango-devel atk-devel openssl-devel || true
   elif command -v yum >/dev/null 2>&1; then
     echo "未检测到 C 编译器，自动安装 Development Tools（需要 sudo）..."
     sudo yum groupinstall -y "Development Tools" || true
     sudo yum install -y gcc gcc-c++ clang make || true
     echo "安装 pkgconfig 与 glib2-devel..."
     sudo yum install -y pkgconfig glib2-devel || true
-    echo "安装 GTK 开发包..."
-    sudo yum install -y gtk3-devel cairo-devel gdk-pixbuf2-devel pango-devel atk-devel || true
+    echo "安装 GTK / WebKit / OpenSSL 开发包..."
+    sudo yum install -y gtk3-devel webkit2gtk4.1-devel libappindicator-gtk3 librsvg2-devel cairo-devel gdk-pixbuf2-devel pango-devel atk-devel openssl-devel || true
   elif command -v pacman >/dev/null 2>&1; then
     echo "未检测到 C 编译器，自动安装 base-devel（需要 sudo）..."
     sudo pacman -Syu --noconfirm base-devel gcc clang || true
     echo "安装 pkgconf 与 glib2..."
     sudo pacman -S --noconfirm pkgconf glib2 || true
-    echo "安装 GTK 开发包..."
-    sudo pacman -S --noconfirm gtk3 cairo gdk-pixbuf2 pango atk || true
+    echo "安装 GTK / WebKit / OpenSSL 开发包..."
+    sudo pacman -S --noconfirm gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg cairo gdk-pixbuf2 pango atk openssl || true
   elif command -v apk >/dev/null 2>&1; then
     echo "未检测到 C 编译器，自动安装 build-base（需要 root/sudo）..."
     sudo apk add --no-cache build-base gcc g++ clang || true
     echo "安装 pkgconfig 与 glib-dev..."
     sudo apk add --no-cache pkgconfig glib-dev || true
-    echo "安装 GTK 开发包..."
-    sudo apk add --no-cache gtk+3.0-dev cairo-dev gdk-pixbuf-dev pango-dev atk-dev || true
+    echo "安装 GTK / WebKit / OpenSSL 开发包..."
+    sudo apk add --no-cache gtk+3.0-dev webkit2gtk-4.1-dev libappindicator-dev librsvg-dev cairo-dev gdk-pixbuf-dev pango-dev atk-dev openssl-dev || true
   else
     echo "未检测到 C 编译器 (cc/gcc/clang)，且无法自动安装。"
     echo "请手动安装："
