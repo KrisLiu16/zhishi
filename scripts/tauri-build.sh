@@ -21,11 +21,21 @@ if ! command -v cargo >/dev/null 2>&1; then
   fi
 fi
 if ! command -v cc >/dev/null 2>&1; then
-  echo "未检测到 C 编译器 (cc/gcc/clang)。请先安装："
-  echo "  - macOS: xcode-select --install"
-  echo "  - Debian/Ubuntu: sudo apt-get install build-essential"
-  echo "  - Windows MSVC: https://visualstudio.microsoft.com/visual-cpp-build-tools/"
-  exit 1
+  OS="$(uname -s)"
+  if [ "$OS" = "Darwin" ]; then
+    echo "未检测到 C 编译器，尝试执行 xcode-select --install（可能会弹窗确认）..."
+    xcode-select --install || true
+  elif command -v apt-get >/dev/null 2>&1; then
+    echo "未检测到 C 编译器，自动安装 build-essential..."
+    sudo apt-get update -y && sudo apt-get install -y build-essential
+  else
+    echo "未检测到 C 编译器 (cc/gcc/clang)，且无法自动安装。"
+    echo "请手动安装："
+    echo "  - macOS: xcode-select --install"
+    echo "  - Debian/Ubuntu: sudo apt-get install build-essential"
+    echo "  - Windows MSVC: https://visualstudio.microsoft.com/visual-cpp-build-tools/"
+    exit 1
+  fi
 fi
 if [ ! -d node_modules ]; then
   echo ">> 安装前端依赖..."
