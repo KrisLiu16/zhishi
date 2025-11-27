@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckSquare, Clipboard, Clock, FileText, Heading2, Image, ListTodo, Minus, Quote } from 'lucide-react';
+import { Check, Clipboard, Clock, FileText, Heading2, Image, ListTodo, Minus, Quote } from 'lucide-react';
 import { MarkdownTheme, Note, NoteStats, ViewMode } from '../types';
 import TagEditor from './TagEditor';
 import MarkdownPreview from './MarkdownPreview';
@@ -233,13 +233,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
       icon: <Minus size={14} />,
       onClick: () => insertSnippet('\n\n---\n\n'),
       disabled: isReadOnly,
-    },
-    {
-      label: '插入复选框',
-      icon: <CheckSquare size={14} />,
-      onClick: () => insertSnippet('- [ ] '),
-      disabled: isReadOnly,
-    },
+    }
   ];
 
   return (

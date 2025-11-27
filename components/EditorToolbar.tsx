@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ChevronRight, Columns, Copy, Download, Edit3, Eye, List, Loader2, Lock, MessageSquare, PenTool, Sidebar, Sparkles, Unlock } from 'lucide-react';
+import { Check, ChevronRight, Columns, Copy, Download, Edit3, Eye, List, Loader2, Lock, MessageSquare, PenTool, Redo2, Sidebar, Sparkles, Undo2, Unlock } from 'lucide-react';
 import { Note, ViewMode } from '../types';
 
 interface EditorToolbarProps {
@@ -22,6 +22,10 @@ interface EditorToolbarProps {
   onExport: () => void;
   onToggleChat: () => void;
   onToggleReadOnly: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -44,6 +48,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onExport,
   onToggleChat,
   onToggleReadOnly,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }) => (
   <div className="h-16 px-4 md:px-6 border-b border-slate-100 flex items-center justify-between bg-white/90 backdrop-blur-md z-20 shrink-0">
     <div className="flex items-center gap-3 overflow-hidden flex-1 mr-4">
@@ -164,6 +172,25 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       >
         {isReadOnly ? <Lock size={18} /> : <Unlock size={18} />}
       </button>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className={`p-2 rounded-lg transition-colors ${canUndo ? 'text-slate-400 hover:text-slate-600 hover:bg-slate-50' : 'text-slate-200 cursor-not-allowed'}`}
+          title="撤销 (Ctrl/Cmd+Z)"
+        >
+          <Undo2 size={18} />
+        </button>
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          className={`p-2 rounded-lg transition-colors ${canRedo ? 'text-slate-400 hover:text-slate-600 hover:bg-slate-50' : 'text-slate-200 cursor-not-allowed'}`}
+          title="前进 (Ctrl/Cmd+Shift+Z)"
+        >
+          <Redo2 size={18} />
+        </button>
+      </div>
     </div>
   </div>
 );

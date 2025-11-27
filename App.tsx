@@ -55,6 +55,8 @@ const App = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [history, setHistory] = useState<Note[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [lastSaved, setLastSaved] = useState<number>(Date.now());
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingAnalyze, setPendingAnalyze] = useState<{ tags: string[]; summary?: string } | null>(null);
@@ -82,6 +84,14 @@ const App = () => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         handleAiPolish();
+      }
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        undoNote();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        redoNote();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -200,6 +210,10 @@ const App = () => {
     setSelectedNoteId(newNote.id);
     setViewMode('edit');
     if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+
+    // history reset
+    setHistory([]);
+    setHistoryIndex(-1);
   };
 
   const handleUpdateNote = (id: string, updates: Partial<Note>) => {
@@ -207,6 +221,16 @@ const App = () => {
     setNotes(updatedNotes);
     saveNotes(updatedNotes);
     setLastSaved(Date.now());
+
+    // push to history
+    const active = updatedNotes.find(n => n.id === id);
+    if (active) {
+      const snapshot = JSON.parse(JSON.stringify(active)) as Note;
+      const nextHistory = history.slice(0, historyIndex + 1).concat(snapshot);
+      const trimmed = nextHistory.slice(-30); // cap history size
+      setHistory(trimmed);
+      setHistoryIndex(trimmed.length - 1);
+    }
   };
 
   const deleteNote = (id: string) => {
@@ -255,6 +279,24 @@ const App = () => {
     const suggested = `${activeNote.title || 'untitled'}.md`;
     const content = resolveAttachments(activeNote);
     await saveFile(new Blob([content], { type: 'text/markdown' }), { suggestedName: suggested, mime: 'text/markdown' });
+  };
+
+  const undoNote = () => {
+    if (historyIndex <= 0 || !activeNote) return;
+    const prevIndex = historyIndex - 1;
+    const prev = history[prevIndex];
+    if (!prev) return;
+    handleUpdateNote(activeNote.id, { content: prev.content, title: prev.title, category: prev.category, tags: prev.tags, attachments: prev.attachments });
+    setHistoryIndex(prevIndex);
+  };
+
+  const redoNote = () => {
+    if (historyIndex >= history.length - 1 || !activeNote) return;
+    const nextIndex = historyIndex + 1;
+    const next = history[nextIndex];
+    if (!next) return;
+    handleUpdateNote(activeNote.id, { content: next.content, title: next.title, category: next.category, tags: next.tags, attachments: next.attachments });
+    setHistoryIndex(nextIndex);
   };
 
   const handleCopyContent = () => {
@@ -487,6 +529,8 @@ const App = () => {
                 isAiPolishing={isAiPolishing}
                 isCopied={isCopied}
                 isReadOnly={isReadOnly}
+                canUndo={historyIndex > 0}
+                canRedo={historyIndex < history.length - 1}
                 onToggleSidebar={() => setIsSidebarOpen(true)}
                 onToggleNoteList={() => setIsNoteListOpen(true)}
                 onBack={() => setSelectedNoteId(null)}
@@ -498,6 +542,8 @@ const App = () => {
         onExport={() => setIsExportOpen(true)}
         onToggleChat={() => setIsChatOpen(v => !v)}
         onToggleReadOnly={() => setIsReadOnly(v => !v)}
+        onUndo={undoNote}
+        onRedo={redoNote}
       />
               <EditorContent
                 activeNote={activeNote}
