@@ -62,6 +62,12 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "."
+      }
+    ],
     "asar": true,
     "mac": {
       "category": "public.app-category.productivity"
