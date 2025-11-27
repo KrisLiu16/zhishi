@@ -89,6 +89,26 @@ const themeCss: Record<MarkdownTheme, string> = {
     td { border-top: 1px solid #1f1a2c; color: #f3e8ff; }
     blockquote { background: #1c142a; border-color: #f472b6; color: #f8e7ff; }
   `,
+  mono: `
+    body { background: #f4f6fb; color: #0f172a; font-family: 'JetBrains Mono','SFMono-Regular',Consolas,monospace; }
+    a { color: #2563eb; }
+    pre { background: #eef2ff; border: 1px solid #cbd5ff; color: #0f172a; }
+    code { background: #e2e8f0; padding: 2px 6px; border-radius: 8px; border: 1px solid #cbd5e1; }
+    table { border: 1px solid #cbd5e1; }
+    th { background: #e2e8f0; color: #1f2937; text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; }
+    td { border-top: 1px solid #cbd5e1; color: #1f2937; }
+    blockquote { background: #e0f2fe; border-color: #38bdf8; color: #0f172a; }
+  `,
+  terminal: `
+    body { background: radial-gradient(circle at 20% 20%, #0f172a 0%, #0b1220 45%, #0a0f1a 100%); color: #e0f2fe; font-family: 'JetBrains Mono','SFMono-Regular',Consolas,monospace; }
+    a { color: #34d399; }
+    pre { background: #0c111b; border: 1px solid #1f2937; color: #d1fae5; }
+    code { background: #111827; padding: 2px 6px; border-radius: 8px; border: 1px solid #1f2937; color: #d1fae5; }
+    table { border: 1px solid #1f2937; }
+    th { background: #0f172a; color: #a7f3d0; text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; }
+    td { border-top: 1px solid #1f2937; color: #e0f2fe; }
+    blockquote { background: #0e1a1a; border-color: #34d399; color: #d1fae5; }
+  `,
 };
 
 export const markdownToHtml = async (markdown: string, theme: MarkdownTheme, title?: string) => {

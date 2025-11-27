@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, CheckSquare, Clipboard, Clock, Code, FileText, Heading2, ListTodo, Minus, Quote, Sigma, Table } from 'lucide-react';
-import { Note, NoteStats, ViewMode } from '../types';
+import { Check, CheckSquare, Clipboard, Clock, FileText, Heading2, Image, ListTodo, Minus, Quote, Sigma, Table } from 'lucide-react';
+import { MarkdownTheme, Note, NoteStats, ViewMode } from '../types';
 import TagEditor from './TagEditor';
 import MarkdownPreview from './MarkdownPreview';
 
@@ -10,11 +10,12 @@ interface EditorContentProps {
   stats: NoteStats;
   lastSaved: number;
   onUpdateNote: (id: string, updates: Partial<Note>) => void;
-  markdownTheme?: 'classic' | 'serif' | 'night';
+  markdownTheme?: MarkdownTheme;
 }
 
 const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, stats, lastSaved, onUpdateNote, markdownTheme = 'classic' }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
 
@@ -30,20 +31,36 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
     setSelection({ start: ta.selectionStart || 0, end: ta.selectionEnd || 0 });
   };
 
+  const getSelectionRange = () => {
+    const ta = textareaRef.current;
+    return {
+      start: ta?.selectionStart ?? selection.start,
+      end: ta?.selectionEnd ?? selection.end,
+    };
+  };
+
+  const insertTextAtSelection = (text: string, extraUpdates: Partial<Note> = {}) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { start, end } = getSelectionRange();
+    const value = ta.value;
+    const next = value.slice(0, start) + text + value.slice(end);
+    onUpdateNote(activeNote.id, { content: next, ...extraUpdates });
+    setTimeout(() => {
+      const pos = start + text.length;
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    }, 0);
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
   const insertSnippet = (wrapperStart: string, wrapperEnd = '') => {
     const ta = textareaRef.current;
     if (!ta) return;
     const value = ta.value;
     const { start, end } = selection;
     const selected = value.slice(start, end);
-    const next = value.slice(0, start) + wrapperStart + selected + wrapperEnd + value.slice(end);
-    onUpdateNote(activeNote.id, { content: next });
-    setTimeout(() => {
-      const pos = start + wrapperStart.length + selected.length + wrapperEnd.length;
-      ta.focus();
-      ta.setSelectionRange(pos, pos);
-    }, 0);
-    setContextMenu(prev => ({ ...prev, visible: false }));
+    insertTextAtSelection(wrapperStart + selected + wrapperEnd);
   };
 
   const copySelection = async () => {
@@ -56,12 +73,70 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
     setContextMenu(prev => ({ ...prev, visible: false }));
   };
 
+  const createAttachmentId = () => `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const readAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const insertImageFile = async (file: File) => {
+    const dataUrl = await readAsDataUrl(file);
+    const { start, end } = getSelectionRange();
+    const selectionText = activeNote.content.slice(start, end).trim();
+    const alt = selectionText || file.name.replace(/\.[^/.]+$/, '') || 'image';
+    const attachmentId = createAttachmentId();
+    const attachments = { ...(activeNote.attachments || {}), [attachmentId]: dataUrl };
+    insertTextAtSelection(`![${alt}](attachment:${attachmentId})`, { attachments });
+  };
+
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await insertImageFile(file);
+    } catch (err) {
+      console.error('Failed to insert image', err);
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const triggerImagePicker = () => {
+    fileInputRef.current?.click();
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    updateSelection();
+    const imageItem = Array.from(items).find(item => item.type.startsWith('image/'));
+    if (!imageItem) return;
+    const file = imageItem.getAsFile();
+    if (!file) return;
+    e.preventDefault();
+    try {
+      await insertImageFile(file);
+    } catch (err) {
+      console.error('Failed to paste image', err);
+    }
+  };
+
   const menuItems = [
     {
       label: '复制选中',
       icon: <Clipboard size={14} />,
       onClick: copySelection,
       disabled: selection.start === selection.end,
+    },
+    {
+      label: '插入图片',
+      icon: <Image size={14} />,
+      onClick: triggerImagePicker,
     },
     {
       label: '插入标题 H2',
@@ -72,11 +147,6 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
       label: '插入待办列表',
       icon: <ListTodo size={14} />,
       onClick: () => insertSnippet('- [ ] '),
-    },
-    {
-      label: '插入代码块',
-      icon: <Code size={14} />,
-      onClick: () => insertSnippet('```\n', '\n```'),
     },
     {
       label: '插入引用',
@@ -112,6 +182,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
       {viewMode !== 'view' && (
         <div className="px-4 md:px-6 py-2 bg-slate-50/50 border-b border-slate-100 flex flex-wrap items-center gap-4 text-xs shrink-0">
           <div className="flex items-center gap-2 group">
@@ -147,6 +218,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
             onSelect={updateSelection}
             onClick={updateSelection}
             onKeyUp={updateSelection}
+            onPaste={handlePaste}
             onContextMenu={e => {
               e.preventDefault();
               updateSelection();
@@ -186,7 +258,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
               </div>
             )}
             <div className="blog-content">
-              <MarkdownPreview content={activeNote.content} theme={markdownTheme} />
+              <MarkdownPreview content={activeNote.content} attachments={activeNote.attachments} theme={markdownTheme} />
             </div>
           </div>
         </div>

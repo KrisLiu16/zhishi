@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { UrlTransform, defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -10,10 +10,12 @@ import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Check, Copy } from 'lucide-react';
 import Mermaid from './Mermaid';
+import { MarkdownTheme } from '../types';
 
 interface MarkdownPreviewProps {
   content: string;
-  theme?: 'classic' | 'serif' | 'night' | 'pastel' | 'paper' | 'contrast';
+  attachments?: Record<string, string>;
+  theme?: MarkdownTheme;
 }
 
 const CopyButton = ({ text }: { text: string }) => {
@@ -40,7 +42,7 @@ const CopyButton = ({ text }: { text: string }) => {
   );
 };
 
-const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, theme = 'classic' }) => {
+const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments = {}, theme = 'classic' }) => {
   const themeStyles = useMemo(
     () => ({
       classic: {
@@ -127,17 +129,56 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, theme = 'cla
         copyBg: 'bg-[#1f1a2c]/80',
         inlineCode: 'bg-[#1f1a2c] text-fuchsia-100 border border-[#2a2140]',
       },
+      mono: {
+        prose: 'prose-slate prose-code:font-mono prose-pre:font-mono',
+        codeStyle: vs,
+        codeBg: '#f4f6fb',
+        blockquote: 'border-sky-500 bg-sky-50/60 text-slate-800',
+        tableHeader: 'bg-slate-100 text-slate-700',
+        tableCell: 'text-slate-700 border-slate-200',
+        container: 'bg-gradient-to-b from-slate-50 to-white p-6 rounded-2xl border border-slate-200 shadow-sm',
+        link: 'prose-a:text-sky-700',
+        tableBorder: 'border-slate-200 divide-slate-200',
+        codeBorder: 'border border-slate-200 bg-[#f8fafc]',
+        copyBg: 'bg-white/80',
+        inlineCode: 'bg-slate-200/60 text-slate-900 border border-slate-300',
+      },
+      terminal: {
+        prose: 'prose-invert prose-slate prose-code:font-mono prose-pre:font-mono',
+        codeStyle: okaidia,
+        codeBg: '#0c111b',
+        blockquote: 'border-emerald-400 bg-[#0e1a1a] text-emerald-50',
+        tableHeader: 'bg-[#0f172a] text-emerald-100',
+        tableCell: 'text-emerald-50 border-[#162032]',
+        container: 'bg-gradient-to-b from-[#0b1020] to-[#0a0d16] p-6 rounded-2xl border border-[#162032] shadow-2xl shadow-black/40',
+        link: 'prose-a:text-emerald-300',
+        tableBorder: 'border-[#162032] divide-[#162032]',
+        codeBorder: 'border border-[#162032] bg-[#0c111b]',
+        copyBg: 'bg-[#0f172a]/80',
+        inlineCode: 'bg-[#11182a] text-emerald-100 border border-[#1b2a44]',
+      },
     }),
     [],
   );
 
-  const style = themeStyles[theme];
+  const style = themeStyles[theme] || themeStyles.classic;
+  const allowDataUrl: UrlTransform = (url, key, node) => {
+    if (key === 'src' && (node as any).tagName === 'img') {
+      if (url.startsWith('attachment:')) {
+        const id = url.replace('attachment:', '');
+        return attachments[id] || '';
+      }
+      if (url.startsWith('data:')) return url;
+    }
+    return defaultUrlTransform(url);
+  };
 
   return (
     <div className={`prose max-w-none prose-headings:font-bold prose-img:rounded-lg markdown-body ${style.prose} ${style.link} ${style.container}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
+        urlTransform={allowDataUrl}
         components={{
           input({ node, ...props }) {
             if (props.type === 'checkbox') {

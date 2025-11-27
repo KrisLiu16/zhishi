@@ -111,7 +111,7 @@ const App = () => {
 - 点击侧边栏折叠按钮，享受全屏写作体验。
 
 \`\`\`mermaid
-graph LR
+ graph LR
     A[灵感] --> B(草稿)
     B --> C{AI 助手}
     C -- 分析 --> D[自动标签]
@@ -125,6 +125,7 @@ graph LR
         tags: ['Guide', 'Welcome'],
         createdAt: Date.now(),
         updatedAt: Date.now(),
+        attachments: {},
       };
       setNotes([welcomeNote]);
       saveNotes([welcomeNote]);
@@ -180,6 +181,7 @@ graph LR
       tags: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      attachments: {},
     };
     const updatedNotes = [newNote, ...notes];
     setNotes(updatedNotes);
@@ -229,15 +231,25 @@ graph LR
 
   const cancelDelete = () => setPendingDeleteId(null);
 
+  const resolveAttachments = (note: Note) => {
+    if (!note.attachments) return note.content;
+    return note.content.replace(/!\[([^\]]*)\]\(attachment:([^)]+)\)/g, (match, alt, id) => {
+      const dataUrl = note.attachments?.[id];
+      return dataUrl ? `![${alt}](${dataUrl})` : match;
+    });
+  };
+
   const handleExportMarkdown = async () => {
     if (!activeNote) return;
     const suggested = `${activeNote.title || 'untitled'}.md`;
-    await saveFile(new Blob([activeNote.content], { type: 'text/markdown' }), { suggestedName: suggested, mime: 'text/markdown' });
+    const content = resolveAttachments(activeNote);
+    await saveFile(new Blob([content], { type: 'text/markdown' }), { suggestedName: suggested, mime: 'text/markdown' });
   };
 
   const handleCopyContent = () => {
     if (!activeNote) return;
-    navigator.clipboard.writeText(activeNote.content).then(() => {
+    const content = resolveAttachments(activeNote);
+    navigator.clipboard.writeText(content).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     });

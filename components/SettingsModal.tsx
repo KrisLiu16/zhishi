@@ -114,6 +114,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
                     { key: 'serif', label: '书卷', desc: '衬线、纸感背景' },
                     { key: 'pastel', label: '柔彩', desc: '粉彩渐变、轻盈' },
                     { key: 'paper', label: '纸质', desc: '书本纸张、复古' },
+                    { key: 'mono', label: '极客 · Mono', desc: '等宽字体、清爽' },
+                    { key: 'terminal', label: '终端 · 夜', desc: '暗色终端、霓虹' },
                     { key: 'night', label: '夜间', desc: '深色、霓虹代码' },
                     { key: 'contrast', label: '高对比', desc: '暗色、高饱和' },
                   ].map(item => (

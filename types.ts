@@ -1,4 +1,3 @@
-
 export interface Note {
   id: string;
   title: string;
@@ -7,6 +6,7 @@ export interface Note {
   tags: string[];
   createdAt: number;
   updatedAt: number;
+  attachments?: Record<string, string>;
 }
 
 export interface Category {
@@ -14,6 +14,8 @@ export interface Category {
   name: string;
   count: number;
 }
+
+export type MarkdownTheme = 'classic' | 'serif' | 'night' | 'pastel' | 'paper' | 'contrast' | 'mono' | 'terminal';
 
 export interface AppSettings {
   apiKey: string;
@@ -23,7 +25,7 @@ export interface AppSettings {
   // Custom Prompts
   customAnalyzePrompt?: string;
   customPolishPrompt?: string;
-  markdownTheme?: 'classic' | 'serif' | 'night' | 'pastel' | 'paper' | 'contrast';
+  markdownTheme?: MarkdownTheme;
 }
 
 export type ViewMode = 'list' | 'edit' | 'split' | 'view';
