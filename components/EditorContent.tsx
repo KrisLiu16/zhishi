@@ -264,7 +264,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
         </div>
       )}
 
-      <div className="flex-1 flex relative overflow-hidden bg-white" onContextMenu={e => e.preventDefault()}>
+      <div className="flex-1 flex relative overflow-hidden bg-white">
         <div
           className={`
             h-full flex flex-col transition-all duration-300 ease-in-out
