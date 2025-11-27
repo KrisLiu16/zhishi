@@ -50,7 +50,7 @@
   "build": {
     "appId": "com.zhishi.desktop",
     "productName": "Zhishi",
-    "icon": "resources/icon.ico",
+    "icon": "resources/icon.png",
     "directories": {
       "output": "release",
       "buildResources": "resources"
@@ -65,6 +65,7 @@
       "category": "public.app-category.productivity"
     },
     "win": {
+      "icon": "resources/icon.ico",
       "target": [
         "nsis",
         "zip"
@@ -72,6 +73,7 @@
       "signAndEditExecutable": false
     },
     "linux": {
+      "icon": "resources/icon.png",
       "target": [
         "AppImage",
         "deb"
