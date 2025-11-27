@@ -225,7 +225,16 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
         components={{
           input({ node, ...props }) {
             if (props.type === 'checkbox') {
-              return <input {...props} className="mr-2 rounded accent-blue-600 h-4 w-4 align-middle" />;
+              return (
+                <label className="inline-flex items-center gap-2 cursor-default align-middle translate-y-[1px]">
+                  <input
+                    {...props}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-0 focus:outline-none align-middle"
+                    onChange={() => {}}
+                  />
+                  <span className="text-slate-700 text-sm leading-none">{props.checked ? '' : ''}</span>
+                </label>
+              );
             }
             return <input {...props} />;
           },
