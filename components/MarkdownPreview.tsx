@@ -278,7 +278,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
             }
 
             return !inline && match ? (
-              <div className={`relative group my-4 rounded-lg overflow-hidden border shadow-sm ${style.codeBorder}`}>
+              <div className={`relative group my-4 rounded-lg overflow-hidden ${style.codeBorder}`}>
                 <div className="absolute top-2 left-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-white/90 px-2 py-1 rounded-md border border-slate-200 shadow-sm opacity-0 group-hover:opacity-100 pointer-events-none">
                   {language || 'code'}
                 </div>
