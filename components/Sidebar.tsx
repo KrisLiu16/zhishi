@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <div className="h-16 flex items-center justify-between px-5 shrink-0 bg-transparent">
       <div className="flex items-center">
         <Logo size={28} className="mr-2.5 shadow-lg shadow-purple-400/30" />
-        <h1 className="text-base font-bold text-slate-800 tracking-tight">智识</h1>
+        <h1 className="text-base font-bold text-slate-800 tracking-tight">Insight Notes</h1>
       </div>
       <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-200/50 rounded-lg transition-colors" title="关闭侧边栏">
         {window.innerWidth < 768 ? <X size={20} /> : <PanelLeftClose size={18} />}
@@ -145,7 +145,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {settings.userName ? settings.userName.charAt(0).toUpperCase() : 'U'}
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <p className="text-sm font-semibold text-slate-700 truncate">{settings.userName || '知识探索者'}</p>
+          <p className="text-sm font-semibold text-slate-700 truncate">{settings.userName || 'Insight Explorer'}</p>
           <p className="text-[10px] text-slate-400 group-hover:text-blue-500 transition-colors">设置与 API</p>
         </div>
         <Settings size={16} className="text-slate-300 group-hover:text-slate-500 transition-transform group-hover:rotate-45" />

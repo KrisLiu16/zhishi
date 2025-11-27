@@ -55,7 +55,7 @@ export const loadSettings = (): AppSettings => {
             apiKey: '',
             baseUrl: DEFAULT_BASE_URL,
             model: DEFAULT_MODEL,
-            userName: '知识探索者',
+            userName: 'Insight Explorer',
             customAnalyzePrompt: DEFAULT_ANALYZE_PROMPT,
             customPolishPrompt: DEFAULT_POLISH_PROMPT,
             markdownTheme: 'classic',

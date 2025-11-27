@@ -108,41 +108,41 @@ const App = () => {
     } else {
       const welcomeNote: Note = {
         id: generateId(),
-        title: '👋 欢迎使用智识',
-        content: `# 欢迎来到您的个人知识博客
+        title: '👋 Welcome to Insight Notes',
+        content: `# Welcome to Insight Notes
 
-这是一个由 AI 驱动的现代化笔记系统。
+An AI-assisted Markdown notebook for fast capture, polish, and export.
 
-## 快速上手
+## Quick start
 
-1. **配置 AI**: 点击左下角的设置图标，配置您喜欢的 AI 服务（Gemini, OpenAI, DeepSeek, 或本地 Ollama）。
-2. **开始写作**: 点击左侧 "+ 新建笔记"。
-3. **AI 辅助**: 使用顶部的 "分析" 自动打标，使用 "润色" 优化文笔。
+1. **Configure AI**: open Settings (bottom-left) and add your provider key (Gemini, OpenAI, DeepSeek, or local Ollama).
+2. **Create**: click "+ New Note" in the sidebar.
+3. **AI help**: use "Analyze" to auto-tag and "Polish" to refine wording.
 
-## 快捷键
+## Shortcuts
 
-- \`Cmd/Ctrl + K\`: 全局搜索
-- \`Cmd/Ctrl + S\`: 保存
-- \`Cmd/Ctrl + Shift + P\`: 打开导出
-- \`Cmd/Ctrl + Enter\`: AI 润色
+- \`Cmd/Ctrl + K\`: command palette / search
+- \`Cmd/Ctrl + S\`: save
+- \`Cmd/Ctrl + Shift + P\`: open export
+- \`Cmd/Ctrl + Enter\`: AI polish
 
-## 布局切换
+## Layout
 
-- 点击顶部工具栏的图标切换 **编辑** / **双栏** / **预览** 模式。
-- 点击侧边栏折叠按钮，享受全屏写作体验。
+- Toggle **Edit / Split / Preview** from the toolbar.
+- Collapse the sidebar to focus.
 
 \`\`\`mermaid
  graph LR
-    A[灵感] --> B(草稿)
-    B --> C{AI 助手}
-    C -- 分析 --> D[自动标签]
-    C -- 润色 --> E[优化内容]
-    D --> F[知识库]
+    A[Idea] --> B(Draft)
+    B --> C{AI Assistant}
+    C -- Analyze --> D[Auto Tags]
+    C -- Polish --> E[Refine Text]
+    D --> F[Library]
     E --> F
 \`\`\`
 
-享受您的写作之旅！`,
-        category: '入门',
+Happy writing!`,
+        category: 'Getting Started',
         tags: ['Guide', 'Welcome'],
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -481,7 +481,7 @@ const App = () => {
             <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
               <Menu size={20} />
             </button>
-            <span className="font-bold text-slate-800 tracking-tight text-lg">智识</span>
+            <span className="font-bold text-slate-800 tracking-tight text-lg">Insight Notes</span>
           </div>
           <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
             {settings.userName ? settings.userName.charAt(0) : 'U'}

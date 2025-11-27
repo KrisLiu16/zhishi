@@ -1,4 +1,4 @@
-# Zhishi – AI-first Markdown Notebook
+# Insight Notes – AI-first Markdown Notebook
 
 Clean, keyboard-friendly note app with AI assist (analyze/polish/chat), multiple Markdown themes, Mermaid & KaTeX, rich exports, and desktop packaging via Electron.
 
@@ -52,7 +52,7 @@ MIT
 
 ---
 
-## 中文简介
+## 中文简介（Insight Notes）
 - AI 笔记应用：支持分析/润色/对话、自定义模型和提示词。
 - 预览：多主题、Mermaid、KaTeX、任务列表、代码行号与语言标签。
 - 图片：粘贴/插入自动压缩，附件存储，Markdown 仍简洁。
