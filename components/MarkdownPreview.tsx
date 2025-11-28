@@ -273,31 +273,38 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
             const codeString = String(children).replace(/\n$/, '');
+            const isBlock = !inline;
 
-            if (!inline && language === 'mermaid') {
+            if (isBlock && language === 'mermaid') {
               return <Mermaid chart={codeString} />;
             }
 
-            return !inline && match ? (
-              <div className={`relative group my-4 rounded-lg overflow-hidden ${style.codeBorder}`}>
-                <div className="absolute top-2 left-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-white/90 px-2 py-1 rounded-md border border-slate-200 shadow-sm opacity-0 group-hover:opacity-100 pointer-events-none">
-                  {language || 'code'}
+            if (isBlock) {
+              return (
+                <div className={`relative group my-4 rounded-lg overflow-hidden ${style.codeBorder}`}>
+                  {language && (
+                    <div className="absolute top-2 left-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-white/90 px-2 py-1 rounded-md border border-slate-200 shadow-sm opacity-0 group-hover:opacity-100 pointer-events-none">
+                      {language}
+                    </div>
+                  )}
+                  <CopyButton text={codeString} />
+                  <SyntaxHighlighter
+                    style={style.codeStyle}
+                    language={language || 'text'}
+                    PreTag="div"
+                    showLineNumbers={!!language}
+                    wrapLongLines
+                    lineNumberStyle={{ color: '#94a3b8', fontSize: '12px', paddingRight: '12px' }}
+                    customStyle={{ margin: 0, borderRadius: 0, backgroundColor: style.codeBg, fontSize: '13px', padding: '24px 18px 18px' }}
+                    {...props}
+                  >
+                    {codeString}
+                  </SyntaxHighlighter>
                 </div>
-                <CopyButton text={codeString} />
-                <SyntaxHighlighter
-                  style={style.codeStyle}
-                  language={language}
-                  PreTag="div"
-                  showLineNumbers
-                  wrapLongLines
-                  lineNumberStyle={{ color: '#94a3b8', fontSize: '12px', paddingRight: '12px' }}
-                  customStyle={{ margin: 0, borderRadius: 0, backgroundColor: style.codeBg, fontSize: '13px', padding: '24px 18px 18px' }}
-                  {...props}
-                >
-                  {codeString}
-                </SyntaxHighlighter>
-              </div>
-            ) : (
+              );
+            }
+
+            return (
               <code className={`${className} px-1.5 py-0.5 rounded text-sm font-mono ${style.inlineCode}`} {...props}>
                 {children}
               </code>
