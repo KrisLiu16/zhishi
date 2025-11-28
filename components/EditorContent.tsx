@@ -23,6 +23,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
   const [insertHint, setInsertHint] = useState<string>('');
   const [previewContent, setPreviewContent] = useState(activeNote.content);
   const [, startTransition] = useTransition();
+  const lastSelectionRef = useRef<{ noteId: string; start: number; end: number }>({ noteId: activeNote.id, start: 0, end: 0 });
 
   const attachmentsSize = useMemo(() => {
     if (!activeNote.attachments) return 0;
@@ -60,10 +61,23 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
     };
   }, [activeNote.content, activeNote.id, startTransition]);
 
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const isSameNote = lastSelectionRef.current.noteId === activeNote.id;
+    const targetStart = isSameNote ? Math.min(lastSelectionRef.current.start, ta.value.length) : ta.value.length;
+    const targetEnd = isSameNote ? Math.min(lastSelectionRef.current.end, ta.value.length) : ta.value.length;
+    ta.setSelectionRange(targetStart, targetEnd);
+    setSelection({ start: targetStart, end: targetEnd });
+    lastSelectionRef.current = { noteId: activeNote.id, start: targetStart, end: targetEnd };
+  }, [activeNote.id]);
+
   const updateSelection = () => {
     const ta = textareaRef.current;
     if (!ta) return;
-    setSelection({ start: ta.selectionStart || 0, end: ta.selectionEnd || 0 });
+    const nextSel = { start: ta.selectionStart || 0, end: ta.selectionEnd || 0 };
+    setSelection(nextSel);
+    lastSelectionRef.current = { noteId: activeNote.id, ...nextSel };
   };
 
   const getSelectionRange = () => {
