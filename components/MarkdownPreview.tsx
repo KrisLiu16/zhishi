@@ -224,6 +224,9 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
         rehypePlugins={[rehypeKatex]}
         urlTransform={allowDataUrl}
         components={{
+          pre({ children }) {
+            return <>{children}</>;
+          },
           input({ node, ...props }) {
             if (props.type === 'checkbox') {
               return (

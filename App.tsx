@@ -294,7 +294,7 @@ Happy writing!`,
         return trimmed;
       });
       lastSnapshotKeyRef.current = key;
-    }, 1200);
+    }, 300);
 
     return () => {
       if (historyTimerRef.current) {
@@ -356,6 +356,9 @@ Happy writing!`,
     const prevIndex = historyIndex - 1;
     const prev = history[prevIndex];
     if (!prev) return;
+    if (historyTimerRef.current) {
+      window.clearTimeout(historyTimerRef.current);
+    }
     setHistoryIndex(prevIndex);
     lastSnapshotKeyRef.current = snapshotKey(prev);
     setCurrentNote({ ...prev });
@@ -366,6 +369,9 @@ Happy writing!`,
     const nextIndex = historyIndex + 1;
     const next = history[nextIndex];
     if (!next) return;
+    if (historyTimerRef.current) {
+      window.clearTimeout(historyTimerRef.current);
+    }
     setHistoryIndex(nextIndex);
     lastSnapshotKeyRef.current = snapshotKey(next);
     setCurrentNote({ ...next });
