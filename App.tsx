@@ -72,6 +72,9 @@ const App = () => {
   const lastSnapshotKeyRef = useRef<string>('');
   const snapshotKey = (note: Note) =>
     `${note.id}|${note.title}|${note.content}|${note.category || ''}|${(note.tags || []).join(',')}|${Object.keys(note.attachments || {}).length}`;
+  const undoRef = useRef<() => void>(() => {});
+  const redoRef = useRef<() => void>(() => {});
+  const polishRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -89,15 +92,15 @@ const App = () => {
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
-        handleAiPolish();
+        polishRef.current();
       }
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        undoNote();
+        undoRef.current();
       }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        redoNote();
+        redoRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -431,6 +434,12 @@ Happy writing!`,
       setIsAiPolishing(false);
     }
   };
+
+  useEffect(() => {
+    undoRef.current = undoNote;
+    redoRef.current = redoNote;
+    polishRef.current = handleAiPolish;
+  }, [undoNote, redoNote, handleAiPolish]);
 
   const applyAnalyze = () => {
     if (!activeNote || !pendingAnalyze) return;
