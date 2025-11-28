@@ -685,6 +685,14 @@ Happy writing!`,
                   selectionRef.current = { start, end };
                   selectionMapRef.current[activeNote.id] = { start, end };
                   setSelectionForNote({ start, end });
+                  setHistory(prev => {
+                    if (historyIndex < 0 || historyIndex >= prev.length) return prev;
+                    const currentSnap = prev[historyIndex];
+                    if (!currentSnap || currentSnap.note.id !== activeNote.id) return prev;
+                    const updated = [...prev];
+                    updated[historyIndex] = { ...currentSnap, selection: { start, end } };
+                    return updated;
+                  });
                 }}
                 markdownTheme={settings.markdownTheme || 'classic'}
                 isReadOnly={isReadOnly}
