@@ -1,4 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
+import CodeMirror, { ViewUpdate } from '@uiw/react-codemirror';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { languages } from '@codemirror/language-data';
+import { EditorState } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { Check, Clipboard, Clock, FileText, Heading2, Image, ListTodo, Minus, Quote } from 'lucide-react';
 import { MarkdownTheme, Note, NoteStats, ViewMode } from '../types';
 import TagEditor from './TagEditor';
@@ -27,7 +32,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
   markdownTheme = 'classic',
   isReadOnly,
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorViewRef = useRef<EditorView | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
@@ -73,28 +78,51 @@ const EditorContent: React.FC<EditorContentProps> = ({
   }, [activeNote.content, activeNote.id, startTransition]);
 
   useLayoutEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const targetStart = Math.min(selection.start, ta.value.length);
-    const targetEnd = Math.min(selection.end, ta.value.length);
-    ta.setSelectionRange(targetStart, targetEnd);
-    setSelectionState({ start: targetStart, end: targetEnd });
+    const view = editorViewRef.current;
+    if (!view) return;
+    const len = view.state.doc.length;
+    const anchor = Math.min(selection.start, len);
+    const head = Math.min(selection.end, len);
+    view.dispatch({ selection: { anchor, head } });
+    setSelectionState({ start: anchor, end: head });
   }, [activeNote.id, selection.start, selection.end]);
 
-  const updateSelection = () => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const nextSel = { start: ta.selectionStart || 0, end: ta.selectionEnd || 0 };
-    setSelectionState(nextSel);
-    onSelectionChange(nextSel.start, nextSel.end);
-  };
-
-  const getSelectionRange = () => {
-    const ta = textareaRef.current;
-    return {
-      start: ta?.selectionStart ?? selectionState.start,
-      end: ta?.selectionEnd ?? selectionState.end,
+  useEffect(() => {
+    const view = editorViewRef.current;
+    const pv = previewRef.current;
+    if (!view || !pv) return;
+    const onScroll = () => {
+      const scroller = view.scrollDOM;
+      if (scroller.scrollHeight <= scroller.clientHeight) return;
+      const ratio = scroller.scrollTop / Math.max(1, scroller.scrollHeight - scroller.clientHeight);
+      pv.scrollTop = ratio * (pv.scrollHeight - pv.clientHeight);
     };
+    const scroller = view.scrollDOM;
+    scroller.addEventListener('scroll', onScroll);
+    return () => scroller.removeEventListener('scroll', onScroll);
+  }, [activeNote.id]);
+
+  const createAttachmentId = () => `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const readAsDataUrl = (file: Blob) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const insertImageFile = async (file: File, view?: EditorView) => {
+    const targetView = view || editorViewRef.current;
+    if (!targetView) return;
+    const compressed = await compressImage(file);
+    const dataUrl = await readAsDataUrl(compressed);
+    const sel = targetView.state.selection.main;
+    const selectionText = targetView.state.doc.sliceString(sel.from, sel.to).trim();
+    const alt = selectionText || file.name.replace(/\.[^/.]+$/, '') || 'image';
+    const attachmentId = createAttachmentId();
+    const attachments = { ...(activeNote.attachments || {}), [attachmentId]: dataUrl };
+    insertTextAtSelection(`![${alt}](attachment:${attachmentId})`, { attachments }, targetView);
   };
 
   const compressImage = async (file: File): Promise<Blob> => {
@@ -126,57 +154,23 @@ const EditorContent: React.FC<EditorContentProps> = ({
     return blob;
   };
 
-  const insertTextAtSelection = (text: string, extraUpdates: Partial<Note> = {}) => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const { start, end } = getSelectionRange();
-    ta.setRangeText(text, start, end, 'end');
-    const next = ta.value;
-    onUpdateNote(activeNote.id, { content: next, ...extraUpdates });
-    const pos = ta.selectionEnd;
-    setSelection({ start: pos, end: pos });
-    ta.focus();
-    setContextMenu(prev => ({ ...prev, visible: false }));
-  };
-
-  const insertSnippet = (wrapperStart: string, wrapperEnd = '') => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const value = ta.value;
-    const { start, end } = selection;
-    const selected = value.slice(start, end);
-    insertTextAtSelection(wrapperStart + selected + wrapperEnd);
-  };
-
-  const copySelection = async () => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const { start, end } = selection;
-    const selected = ta.value.slice(start, end);
-    if (!selected) return;
-    await navigator.clipboard.writeText(selected);
-    setContextMenu(prev => ({ ...prev, visible: false }));
-  };
-
-  const createAttachmentId = () => `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-
-  const readAsDataUrl = (file: Blob) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  const insertTextAtSelection = (text: string, extraUpdates: Partial<Note> = {}, view?: EditorView) => {
+    const targetView = view || editorViewRef.current;
+    if (!targetView) return;
+    const sel = targetView.state.selection.main;
+    const from = sel.from;
+    const to = sel.to;
+    targetView.dispatch({
+      changes: { from, to, insert: text },
+      selection: { anchor: from + text.length },
+      scrollIntoView: true,
     });
-
-  const insertImageFile = async (file: File) => {
-    const compressed = await compressImage(file);
-    const dataUrl = await readAsDataUrl(compressed);
-    const { start, end } = getSelectionRange();
-    const selectionText = activeNote.content.slice(start, end).trim();
-    const alt = selectionText || file.name.replace(/\.[^/.]+$/, '') || 'image';
-    const attachmentId = createAttachmentId();
-    const attachments = { ...(activeNote.attachments || {}), [attachmentId]: dataUrl };
-    insertTextAtSelection(`![${alt}](attachment:${attachmentId})`, { attachments });
+    const next = targetView.state.doc.toString();
+    onUpdateNote(activeNote.id, { content: next, ...extraUpdates });
+    onSelectionChange(from + text.length, from + text.length);
+    setSelectionState({ start: from + text.length, end: from + text.length });
+    setContextMenu(prev => ({ ...prev, visible: false }));
+    targetView.focus();
   };
 
   const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,24 +192,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
     setContextMenu(prev => ({ ...prev, visible: false }));
   };
 
-  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    updateSelection();
-    const imageItem = Array.from(items).find(item => item.type.startsWith('image/'));
-    if (!imageItem) return;
-    const file = imageItem.getAsFile();
-    if (!file) return;
-    e.preventDefault();
-    try {
-      await insertImageFile(file);
-    } catch (err) {
-      console.error('Failed to paste image', err);
-    }
-  };
-
-  const pasteFromClipboard = async () => {
-    updateSelection();
+  const handlePasteMenu = async () => {
     try {
       if ((navigator.clipboard as any)?.read) {
         const items = await (navigator.clipboard as any).read();
@@ -241,17 +218,35 @@ const EditorContent: React.FC<EditorContentProps> = ({
     }
   };
 
+  const copySelection = async () => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    const sel = view.state.selection.main;
+    const selected = view.state.doc.sliceString(sel.from, sel.to);
+    if (!selected) return;
+    await navigator.clipboard.writeText(selected);
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
+  const insertSnippet = (wrapperStart: string, wrapperEnd = '') => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    const sel = view.state.selection.main;
+    const selected = view.state.doc.sliceString(sel.from, sel.to);
+    insertTextAtSelection(wrapperStart + selected + wrapperEnd, {}, view);
+  };
+
   const menuItems = [
     {
       label: '复制选中',
       icon: <Clipboard size={14} />,
       onClick: copySelection,
-      disabled: selection.start === selection.end,
+      disabled: selectionState.start === selectionState.end,
     },
     {
       label: '粘贴',
       icon: <Clipboard size={14} />,
-      onClick: pasteFromClipboard,
+      onClick: handlePasteMenu,
       disabled: isReadOnly,
     },
     {
@@ -283,8 +278,63 @@ const EditorContent: React.FC<EditorContentProps> = ({
       icon: <Minus size={14} />,
       onClick: () => insertSnippet('\n\n---\n\n'),
       disabled: isReadOnly,
-    }
+    },
   ];
+
+  const extensions = useMemo(() => {
+    const pasteHandler = EditorView.domEventHandlers({
+      paste: (event, view) => {
+        if (isReadOnly) return false;
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+        const imageItem = Array.from(items).find(item => item.type.startsWith('image/'));
+        if (!imageItem) return false;
+        const file = imageItem.getAsFile();
+        if (!file) return false;
+        event.preventDefault();
+        insertImageFile(file, view);
+        return true;
+      },
+      contextmenu: e => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY, visible: true });
+        return true;
+      },
+    });
+
+    const theme = EditorView.theme(
+      {
+        '&': { height: '100%', backgroundColor: 'transparent' },
+        '.cm-scroller': { fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace', lineHeight: '1.6', padding: '24px' },
+        '.cm-content': { caretColor: '#0f172a' },
+        '.cm-gutters': { backgroundColor: 'transparent', border: 'none', color: '#cbd5e1' },
+      },
+      { dark: false },
+    );
+
+    return [
+      theme,
+      EditorView.lineWrapping,
+      markdown({ base: markdownLanguage, codeLanguages: languages }),
+      EditorState.tabSize.of(2),
+      pasteHandler,
+    ];
+  }, [isReadOnly, activeNote.id]);
+
+  const handleEditorChange = (value: string, viewUpdate: ViewUpdate) => {
+    onUpdateNote(activeNote.id, { content: value });
+    const sel = viewUpdate.state.selection.main;
+    setSelectionState({ start: sel.from, end: sel.to });
+    onSelectionChange(sel.from, sel.to);
+  };
+
+  const handleEditorUpdate = (vu: ViewUpdate) => {
+    if (vu.selectionSet && !vu.docChanged) {
+      const sel = vu.state.selection.main;
+      setSelectionState({ start: sel.from, end: sel.to });
+      onSelectionChange(sel.from, sel.to);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -317,31 +367,23 @@ const EditorContent: React.FC<EditorContentProps> = ({
             ${viewMode === 'view' ? 'w-0 hidden' : ''}
           `}
         >
-          <textarea
-            ref={textareaRef}
-            value={activeNote.content}
-            onChange={e => onUpdateNote(activeNote.id, { content: e.target.value })}
-            readOnly={isReadOnly}
-            onSelect={updateSelection}
-            onClick={updateSelection}
-            onKeyUp={updateSelection}
-            onScroll={() => {
-              const ta = textareaRef.current;
-              const pv = previewRef.current;
-              if (ta && pv && pv.scrollHeight > pv.clientHeight) {
-                const ratio = ta.scrollTop / Math.max(1, ta.scrollHeight - ta.clientHeight);
-                pv.scrollTop = ratio * (pv.scrollHeight - pv.clientHeight);
-              }
-            }}
-            onPaste={handlePaste}
-            onContextMenu={e => {
-              e.preventDefault();
-              updateSelection();
-              setContextMenu({ x: e.clientX, y: e.clientY, visible: true });
-            }}
-            className="flex-1 w-full h-full p-6 md:p-8 resize-none outline-none font-mono text-sm leading-relaxed text-slate-800 bg-transparent custom-scrollbar"
-            placeholder="# 开始你的创作..."
-          />
+          <div className="flex-1 h-full">
+            <CodeMirror
+              key={activeNote.id}
+              value={activeNote.content}
+              height="100%"
+              basicSetup={{ lineNumbers: true, highlightActiveLineGutter: false }}
+              extensions={extensions}
+              readOnly={isReadOnly}
+              onCreateEditor={view => {
+                editorViewRef.current = view;
+              }}
+              onChange={handleEditorChange}
+              onUpdate={handleEditorUpdate}
+              className="h-full"
+              theme="light"
+            />
+          </div>
         </div>
 
         {viewMode !== 'edit' && (
