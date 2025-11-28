@@ -31,7 +31,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
-  const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
+  const [selectionState, setSelectionState] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [insertHint, setInsertHint] = useState<string>('');
   const [previewContent, setPreviewContent] = useState(activeNote.content);
   const [, startTransition] = useTransition();
@@ -80,7 +80,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
     const targetStart = isSameNote ? Math.min(lastSelectionRef.current.start, ta.value.length) : ta.value.length;
     const targetEnd = isSameNote ? Math.min(lastSelectionRef.current.end, ta.value.length) : ta.value.length;
     ta.setSelectionRange(targetStart, targetEnd);
-    setSelection({ start: targetStart, end: targetEnd });
+    setSelectionState({ start: targetStart, end: targetEnd });
     lastSelectionRef.current = { noteId: activeNote.id, start: targetStart, end: targetEnd };
   }, [activeNote.id]);
 
@@ -91,7 +91,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
     const targetStart = Math.min(selection.start, ta.value.length);
     const targetEnd = Math.min(selection.end, ta.value.length);
     ta.setSelectionRange(targetStart, targetEnd);
-    setSelection({ start: targetStart, end: targetEnd });
+    setSelectionState({ start: targetStart, end: targetEnd });
     lastSelectionRef.current = { noteId: activeNote.id, start: targetStart, end: targetEnd };
   }, [selection.start, selection.end, activeNote.id]);
 
@@ -99,7 +99,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
     const ta = textareaRef.current;
     if (!ta) return;
     const nextSel = { start: ta.selectionStart || 0, end: ta.selectionEnd || 0 };
-    setSelection(nextSel);
+    setSelectionState(nextSel);
     lastSelectionRef.current = { noteId: activeNote.id, ...nextSel };
     onSelectionChange(nextSel.start, nextSel.end);
   };
@@ -107,8 +107,8 @@ const EditorContent: React.FC<EditorContentProps> = ({
   const getSelectionRange = () => {
     const ta = textareaRef.current;
     return {
-      start: ta?.selectionStart ?? selection.start,
-      end: ta?.selectionEnd ?? selection.end,
+      start: ta?.selectionStart ?? selectionState.start,
+      end: ta?.selectionEnd ?? selectionState.end,
     };
   };
 
