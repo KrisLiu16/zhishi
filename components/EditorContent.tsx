@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { Check, Clipboard, Clock, FileText, Heading2, Image, ListTodo, Minus, Quote } from 'lucide-react';
 import { MarkdownTheme, Note, NoteStats, ViewMode } from '../types';
 import TagEditor from './TagEditor';
@@ -22,6 +22,7 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [insertHint, setInsertHint] = useState<string>('');
   const [previewContent, setPreviewContent] = useState(activeNote.content);
+  const [, startTransition] = useTransition();
 
   const attachmentsSize = useMemo(() => {
     if (!activeNote.attachments) return 0;
@@ -39,9 +40,25 @@ const EditorContent: React.FC<EditorContentProps> = ({ activeNote, viewMode, sta
   }, [activeNote.id]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setPreviewContent(activeNote.content), 220);
-    return () => window.clearTimeout(timer);
-  }, [activeNote.content]);
+    const idle = (window as any).requestIdleCallback;
+    const cancelIdle = (window as any).cancelIdleCallback;
+    let cleanup: (() => void) | undefined;
+
+    const schedule = () => {
+      if (idle) {
+        const id = idle(() => startTransition(() => setPreviewContent(activeNote.content)), { timeout: 500 });
+        cleanup = () => cancelIdle && cancelIdle(id);
+        return;
+      }
+      const t = window.setTimeout(() => startTransition(() => setPreviewContent(activeNote.content)), 240);
+      cleanup = () => window.clearTimeout(t);
+    };
+
+    schedule();
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [activeNote.content, activeNote.id, startTransition]);
 
   const updateSelection = () => {
     const ta = textareaRef.current;

@@ -66,6 +66,10 @@ pre {
   margin-right: 6px;
   vertical-align: middle;
 }
+.markdown-body {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 .markdown-body .task-list-item {
   list-style: none;
 }

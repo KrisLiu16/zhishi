@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useMemo, useState } from 'react';
+import React, { memo, useDeferredValue, useMemo, useState } from 'react';
 import ReactMarkdown, { UrlTransform, defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -196,7 +196,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
   };
 
   return (
-    <div className={`relative prose max-w-none prose-headings:font-bold prose-img:rounded-lg markdown-body ${style.prose} ${style.link} ${style.container}`}>
+    <div className={`relative prose max-w-none prose-headings:font-bold prose-img:rounded-lg markdown-body break-words ${style.prose} ${style.link} ${style.container}`}>
       {showToc && headings.length > 0 && (
         <div className="hidden lg:block absolute left-[-220px] top-0 w-48 text-xs text-slate-500">
           <div className="sticky top-6 bg-white/80 backdrop-blur rounded-xl border border-slate-200 shadow-sm p-3 space-y-2">
@@ -358,4 +358,4 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, attachments 
   );
 };
 
-export default MarkdownPreview;
+export default memo(MarkdownPreview);
